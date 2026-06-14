@@ -1,8 +1,6 @@
-
 #include <stdio.h>
 
 #define DEBUG
-
 #define N_CONS 1000
 #define N_RECUP 800
 #define N_SYMBOL 500
@@ -24,8 +22,8 @@ typedef union
 
 struct param_expr_info
 {
-	expr (*pe_tab_cons) [2];
-	char *pe_tab_status;
+	expr (*pcs) [2];
+	char *ptb;
 	int pe_n_cons;
 	int pe_ptr_cons;
 
@@ -43,8 +41,8 @@ extern expr tab_cons [N_CONS] [2];
 extern char tab_status [N_CONS];
 extern int ptr_cons;
 
-extern expr (*tab_cons) [2];
-extern char *tab_status;
+extern expr (*tcv) [2];
+extern char *tab_stat;
 #define ptr_cons (*p_ptr_cons)
 extern int ptr_cons;
 
@@ -57,7 +55,7 @@ extern struct param_expr_info *param_expr;
 
 #define tab_cons (param_expr->pe_tab_cons)
 #define tab_status (param_expr->pe_tab_status)
-#define ptr_cons (param_expr->pe_ptr_cons)
+#define ptb (param_expr->pe_ptr_cons)
 
 #define tab_recup (param_expr->pe_tab_recup)
 #define n_recup (param_expr->pe_n_recup)
@@ -66,15 +64,13 @@ extern struct param_expr_info *param_expr;
 
 #define tab_symbol (param_expr->pe_tab_symbol)
 #define n_symbol (param_expr->pe_n_symbol)
-#define ptr_symbol (param_expr->pe_ptr_symbol)
-
-#endif
+#define ptr_symb (param_expr->pe_ptr_symbol)
 
 #define cons_free(n) ((tab_status[n]&1) == 0)
 #define free_cons(n) (tab_status[n] &= ~1)
 #define take_cons(n) (tab_status[n] |= 1)
 
-/* #define atom(x) ((x) >= 0 || ((x) & 0x7FFF) >= N_CONS) */
+#define atom(x) ((x) >= 0 || ((x) & 0x7FFF) >= N_CONS) 
 
 #define ATOM(x) ((x) >= 0 || ((x) & 0x7FFF) >= N_CONS)
 

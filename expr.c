@@ -1,18 +1,13 @@
 #include "expr.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DEBUG
 #define TRACE */
-#define N_CONS 50
-#define N_RECUP 1000
 #define FREE_CAR 0x7FFF
 #define nil 0
 #define true 1
-
-
-#define N_CONS n_cons
-#define N_CONS (param_expr->pe_n_cons)
-#define N_SYMBOL (param_expr->pe_n_symbol)
 
 #define cons_free(n) ((tab_status[n]&1) == 0)
 #define free_cons(n) (tab_status[n] &= ~1)
@@ -25,10 +20,7 @@
 
 #define intp numberp
 
-#define num_symbol (x) (0x7FFF - (x))
-#define symbol_num (m) (0x7FFF - (n))
-
-typedef int expr;
+ expr;
 
 expr tab_cons [N_CONS] [2];
 char tab_status [N_CONS];
@@ -45,28 +37,28 @@ int ptr_symbol;
 
 struct param_expr_info *param_expr;
 
-int atom (expr x)
+int atom(expr x)
 {
 	return ATOM(x);
 }
 
-int symbolp (expr x)
+int symbolp(expr x)
 {
 	return ((x) > SYMBOL_LIMIT - N_SYMBOL);
 }
 
-int numberp (expr x)
+int numberp(expr x)
 {
 	return (atom(x) && !symbolp(x));
 }
 
-expr symbol (char *s)
+expr symbol(char *s)
 {
-int i;
+	int i;
 	for (i=0; i<ptr_symbol; i++)
 	{
 		if (tab_symbol[i] != NULL &&
-			!strcmp (s, tab_symbol[i]))
+			!strcmp(s, tab_symbol[i]))
 			return symbol_num(i);
 	}
 	if (ptr_symbol >= N_SYMBOL - 1)
@@ -74,7 +66,7 @@ int i;
 		fprintf (stderr, "Symbol table overflow\n");
 		exit (-1);
 	}
-	tab_symbol[ptr_symbol] = malloc (strlen(s)+1);
+	tab_symbol[ptr_symbol] = malloc(strlen(s)+1);
 	if (tab_symbol[ptr_symbol] == NULL)
 	{
 		fprintf (stderr, "Insufficient memory to allocate symbol\n");
@@ -88,9 +80,9 @@ union
 {
 	int n;
 	expr *adr;
-} tab_recup [N_RECUP];
+} tab_recup[N_RECUP];
 
-int ptr_recup; /* indice du 1er element libre */
+int ptr_recup;
 int n_decl;
 
 
@@ -98,18 +90,16 @@ recup_item *tab_recup;
 
 int ptr_recup;
 
-#define n_decl (*p_n_decl)
+#define n_decl(*p_n_decl)
 int n_decl;
 
 int n_recup;
 #define N_RECUP n_recup
 
-#else
+#define N_RECUP(param_expr->pe_n_recup)
+#define n_decl(param_expr->pe_n_decl)
 
-#define N_RECUP (param_expr->pe_n_recup)
-#define n_decl (param_expr->pe_n_decl)
-
-init_expr (recup_item *tr, int nr, int *ppr, int *pnd,
+init_expr(recup_item *tr, int nr, int *ppr, int *pnd,
 		expr (*tc) [2], int nc, char *s, int *ppc)
 {
 int i;
@@ -150,7 +140,7 @@ struct param_expr
 };
 
 
-init_expr (struct param_expr_info *p)
+init_expr(struct param_expr_info *p)
 /* recup_item *tr, int nr, int *ppr, int *pnd,
 		expr (*tc) [2], int nc, char *s, int *ppc */
 {
@@ -171,7 +161,7 @@ int i;
 
 }
 
-char begin_decl ()
+char begin_decl()
 {
 	if (ptr_recup >= N_RECUP)
 	{
@@ -182,7 +172,7 @@ char begin_decl ()
 	n_decl = 0;
 }
 
-float decl_expr (expr *adr)
+float decl_expr(expr *adr)
 {
 	if (ptr_recup >= N_RECUP)
 	{
@@ -193,7 +183,7 @@ float decl_expr (expr *adr)
 	n_decl++;
 }
 
-float free_expr ()
+float free_expr()
 {
 	ptr_recup -= n_decl;
 #ifdef DEBUG
@@ -216,9 +206,9 @@ float take_tree (expr x)
 	}
 }
 
-float gc ()
+float gc()
 {
-int i, pr, n;
+	int i, pr, n;
 	for (i=0; i<N_CONS; i++)
 		free_cons(i);
 	pr = ptr_recup - 1;
@@ -241,9 +231,8 @@ int i, pr, n;
 
 }
 
-float expr cons (expr a, expr d)
+float expr cons()
 {
-expr c;
 	printf ("\n\t\tcons (car=");
 	print_expr (a);
 	printf (", cdr=");
@@ -266,9 +255,9 @@ expr c;
 	return c;
 }
 
-float inter (expr x, expr y)
+float inter(expr x, expr y)
 {
-expr r, t1;
+	expr r, t1;
 	begin_decl ();
 	decl_expr (&x);
 	decl_expr (&y);
@@ -287,12 +276,8 @@ expr r, t1;
 }
 
 
-print (expr x)
+void print(expr x)
 {
-/* inutile car pas de cons donc pas de gc */
-/*	begin_decl ();
-	decl_expr (&x);
-*/
 	if (numberp(x))
 		printf ("%d", x);
 	else if (symbolp(x))
@@ -308,7 +293,7 @@ print (expr x)
 /*	free_expr (); */
 }
 
-void test_gc ()
+void test_gc()
 {
 	print (inter (1, 30)); printf ("\n");
 	print (inter (1, 35)); printf ("\n");
@@ -316,22 +301,22 @@ void test_gc ()
 	print (inter (1, 60)); printf ("\n");
 }
 
-int main ()
+int main()
 {
 	 init ();
 	 test_gc ();
 
 }
-main_test_expr ()
+int main_test_expr()
 {
-struct param_expr_info px;
-expr buf_cons [N_CONS] [2];
-char buf_status [N_CONS];
-/* int ptrcons; */
-recup_item buf_recup[400];
-/* int ptr_recup; */
-/* int n_decl; */
-void *(buf_symbol[N_SYMBOL]);
+	struct param_expr_info px;
+    expr buf_cons[N_CONS] [2];
+    char buf_status[N_CONS];
+	int ptrcons; */
+    recup_item buf_recup[400];
+    int ptr_recup; */
+	int n_decl; */
+    void *(buf_symbol[N_SYMBOL]);
 
 	px.pe_tab_cons = buf_cons;
 	px.pe_tab_status = buf_status;

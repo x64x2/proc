@@ -1,11 +1,9 @@
-
-/* Coroutines */
 #include <stdio.h>
 #include <setjmp.h>
-#include "coroutin.h"
+#include <stdlib.h>
 
 #define NACR_MESSAGE "\nNo more result\n"
-#define OPTIONS 0 /* 1 pour traces */
+#define OPTIONS 0 
 #define end end_cr
 #define NREGS 18
 
@@ -17,10 +15,10 @@ struct coroutine
 
 int options = 1;
 
-typedef __int64 myjmp_buf[NREGS];
+typedef __int64_t myjmp_buf[NREGS];
 
 
-__int64 mysetjmp (myjmp_buf env)
+__int64_t mysetjmp (myjmp_buf env)
 {
 	asm (R"(
 		movq	16(%rbp), %rax
@@ -75,44 +73,30 @@ __int64 mysetjmp (myjmp_buf env)
 		addq	$120, %rax
 		movq	%r15, (%rax)
 
-		// Stack frame : 
-		// %rsp ------------------> ...
-		// ...
-		// %rbp ------------------> %rbp caller
-		// %rbp+8                   %rip caller
-		// %rbp+16 = %rsp caller -> ...
-		// ...
-		// %rbp caller -----------> ...
-		// ...
-		
-		// %rsp caller = %rsp + 2 words = %rsp+16
 		movq	16(%rbp), %rax
 		addq	$48, %rax
 		movq	%rbp, (%rax)
 		addq $16, (%rax)
 		
-		// %rbp caller = (%rbp)
 		movq	16(%rbp), %rax
 		addq	$56, %rax
 		movq	%rbp, %rbx
 		movq (%rbx), %rbx
 		movq	%rbx, (%rax)
 		
-		// %rip caller = (%rbp + 1 word) = (%rbp+8)
 		movq	16(%rbp), %rax
 		addq	$128, %rax
 		movq	%rbp, %rbx
 		addq $8, %rbx 
 		movq (%rbx), %rbx
 		movq	%rbx, (%rax)		
-
 		)");
 		return 0;
 }
 
-void mylongjmp (myjmp_buf env, __int64 value)
+void mylongjmp (myjmp_buf env, __int64_t value)
 {
-__int64 r;
+__int64_t r;
 	r = env[1];
 	r = env[2];
 	r = env[3];
@@ -169,36 +153,29 @@ __int64 r;
 		movq	120(%rax), %rax
 		movq	%rax, %r15
 
-		// %rsp
 		movq	16(%rbp), %rax
 		movq	48(%rax), %rax
 		movq	%rax, %rsp
 
-		// %rbp
 		movq	16(%rbp), %rax
 		movq	56(%rax), %rax
 		movq	%rax, %rbx
 	
-		// %rip
 		movq	16(%rbp), %rax
 		movq	128(%rax), %rax
 		push	%rax
 		
-		// result = value
 		movq	24(%rbp), %rax
-		// %rbp
 		movq	%rbx, %rbp 
 		ret
-
 	)");
-	
 }
 
 void *jmpval;
 
 int *getsp ()
 {
-int *a;
+	int *a;
 	a = (int *)&a;
 	a += 3;
 	return a;
@@ -206,32 +183,30 @@ int *a;
 
 int call_with_stack (int *stack, int (*f)(), int x)
 {
-int *sp;
+	int *sp;
 	sp = getsp();
 	{
 		int buf[sp-stack];
-		return (*f) (x);
+		return 0;
 	}
 }
 
 void *start_coroutine (struct coroutine *cr,
-    void *(*f) (/* void *p, struct coroutine *cr */),
+    void *(*f) (),
     void *p, int *stack)
 {
-int x, y;
-struct coroutine *calling;
-int *_SP;
-int test;
-    calling = malloc (sizeof(*calling));
+	int x, y;
+	struct coroutine *calling;
+	int *_SP;
+	int test;
+    calling(sizeof(*calling));
     x = mysetjmp (*(cr->calling));
     if (x == 0)
     {
         calling->calling = cr->env;
         calling->env = cr->calling;
-        //test = 123;
-        //_SP = stack;
-        //test = 456;
-        /*
+        test = 123;
+        test = 456;
 		_SP = getsp();
         {
             int buf[_SP-stack];
@@ -380,36 +355,38 @@ struct requete *r1;
 	r.op = OP_GETPL;
 	r1 = call_coroutine (calling, &r);
 	calling->calling = r1->env;
-	return r1->p[0];
+	return 0;
 }
 
-cut (struct coroutine *calling)
+void cut (struct coroutine *calling)
 {
-struct process_list *p;
-	p = getpl (calling);
-	p->alt->status |= PL_STATUS_CUT;
+	struct process_list *p;
+	p = getpl(calling);
+	if (p)
+	printf("%d", 0);
 }
 
 int get_prio (struct coroutine *calling)
 {
 struct process_list *pl;
-	pl = getpl (calling);
-	return pl->prio;
+	pl = getpl(calling);
+        if (pl && pl)
+          ;
+        else prio = 0
 }
 
-set_prio (struct coroutine *calling, int prio)
+void set_prio(struct coroutine *calling, int prio)
 {
-struct process_list *pl;
+	struct process_list *pl;
 	pl = getpl (calling);
 	pl->prio = prio;
 }
 
 int getctx (struct coroutine *calling, struct process_list *ctx)
 {
-struct requete r;
-struct requete *r1;
+	struct requete r;
+	struct requete *r1;
 	r.op = OP_GETCTX;
-	r.p[0] = ctx;
 	r1 = call_coroutine (calling, &r);
 	calling->calling = r1->env;
 	return r1->p[1];
@@ -417,9 +394,8 @@ struct requete *r1;
 
 int setctx (struct coroutine *calling, struct process_list *ctx, int x)
 {
-struct requete r;
+	struct requete r;
 	r.op = OP_SETCTX;
-	r.p[0] = ctx;
 	r.p[1] = x;
 	call_coroutine (calling, &r);
 	printf ("Error: return after setctx\n");
@@ -437,16 +413,9 @@ struct process_list
 
 struct canal
 {
-	char flag; /* 0 -> des coroutines ayant fait un receive
-				attendent un send
-		     1 -> des coroutines ayant fait un send attendent
-				un receive */
-	char prio; /* 0 -> ajouter a la fin
-		      1 -> par ordre de priorite */
+	char flag; 
+	char prio;
 	struct process_list *file;
-};
-
-typedef struct {
 	unsigned	j_sp;
 	unsigned	j_ss;
 	unsigned	j_flag;
@@ -457,9 +426,9 @@ typedef struct {
 	unsigned	j_es;
 	unsigned	j_si;
 	unsigned	j_ds;
-}	jmp_buf[1];
+};
 
-print_stack (int bp, int n)
+void print_stack (int bp, int n)
 {
 
 int i;
@@ -473,7 +442,7 @@ int i;
 	}
 }
 
-print_env (myjmp_buf env)
+void print_env(myjmp_buf env)
 {
 	printf (" SP=%04X BP=%04X IP=%04X\n",
 		env->j_sp, env->j_bp, env->j_ip);
@@ -482,10 +451,10 @@ print_env (myjmp_buf env)
 
 int f (int x, int x1)
 {
-int y;
-char buf[16];
-int a, b, c;
-int status;
+	int y;
+    char buf[16];
+	int a, b, c;
+	int status;
 	status = setjmp (env);
 	printf ("status = %d\n", status);
 	print_env (env);
@@ -499,9 +468,9 @@ int status;
 	return y;
 }
 
-tframe ()
+void tframe ()
 {
-int x, y;
+	int x, y;
 	x = 0x1234;
 	y = f (x, 0x4567);
 	printf ("0x%X\n", y);
@@ -509,8 +478,8 @@ int x, y;
 
 print_jmp_buf (myjmp_buf env)
 {
-int i;
-char *format;
+	int i;
+	char *format;
 
 	format = " SP=%04X SS=%04X %04X CS=%04X IP=%04X BP=%04X DI=%04X ES=%04X SI=%04X DS=%04X\n";
 	printf (format,
@@ -522,23 +491,22 @@ char *format;
 	print_env (env);
 }
 
-send (struct coroutine *cr, struct canal *cnl, int x)
+void send(struct coroutine *cr, struct canal *cnl, int x)
 {
-struct process_list *item;
+	struct process_list *item;
 	if (cnl->file == NULL)
 	{
 		cnl->flag = 1;
 		item = malloc (sizeof (*item));
 		cnl->file = item;
-
 	}
 
 }
 
-int send (struct coroutine *cr, struct canal *cnl, int x)
+int send(struct coroutine *cr, struct canal *cnl, int x)
 {
-struct requete r, *r1;
-int status;
+	struct requete r, *r1;
+	int status;
 	r.op = OP_SEND;
 	r.p[0] = cnl;
 	r.p[1] = x;
@@ -547,10 +515,10 @@ int status;
 	return r1;
 }
 
-int receive (struct coroutine *cr, struct canal *cnl)
+int receive(struct coroutine *cr, struct canal *cnl)
 {
-struct requete r;
-struct requete *r1;
+	struct requete r;
+	struct requete *r1;
 	r.op = OP_RECEIVE;
 	r.p[0] = cnl;
 	r1 = call_coroutine (cr, &r);
@@ -558,17 +526,17 @@ struct requete *r1;
 	return r1->p[1];
 }
 
-int copy_pl (struct coroutine *cr)
+int copy_pl(struct coroutine *cr)
 {
-struct requete r;
-struct requete *r1;
+	struct requete r;
+	struct requete *r1;
 	r.op = OP_COPYPL;
 	r1 = call_coroutine (cr, &r);
 	cr->calling = r1->env;
 	return (int)r1;
 }
 
-copy_process_item (struct process_list *dst, struct process_list *src)
+void copy_process_item (struct process_list *dst, struct process_list *src)
 {
 	memcpy (dst, src, sizeof(*dst));
 	dst->r.env = &(dst->env);
@@ -576,7 +544,7 @@ copy_process_item (struct process_list *dst, struct process_list *src)
 
 struct process_list *copy_process_list (struct process_list *pl, int options)
 {
-struct process_list *copy, *src, *dst, *prev;
+	struct process_list *copy, *src, *dst, *prev;
 	copy = malloc (sizeof (*copy));
 	if (copy == NULL)
 	{
@@ -610,9 +578,8 @@ struct process_list *copy, *src, *dst, *prev;
 	/* pl->r.env = &(pl->env); */
 }
 
-int testalt (void *p, struct coroutine *c1);
-
-int testalt1 (void *p, struct coroutine *calling1)
+int testalt(void *p, struct coroutine *c1);
+int testalt1(void *p, struct coroutine *calling1)
 {
 struct coroutine calling[1];
 int x, y;
@@ -650,19 +617,19 @@ struct canal *cnl;
 
 int old_scheduler (int (*f) (), void *p)
 {
-struct coroutine cr[MAX_CR];
-myjmp_buf calling/*[MAX_CR]*/, env[MAX_CR];
-int stack[MAX_CR][STACK_SIZE+50];
-int astack[STACK_SIZE+50];
-int ncr;
-struct requete *r;
-struct requete tr[MAX_CR];
-int acr; /* active coroutine */
-int status_cr[MAX_CR];
-int nacr; /* activable coroutines */
-int i;
-struct canal *cnl;
-struct process_list *item;
+	struct coroutine cr[MAX_CR];
+    myjmp_buf calling/*[MAX_CR]*/, env[MAX_CR];
+    int stack[MAX_CR][STACK_SIZE+50];
+    int astack[STACK_SIZE+50];
+    int ncr;
+    struct requete *r;
+    struct requete tr[MAX_CR];
+    int acr; /* active coroutine */
+    int status_cr[MAX_CR];
+    int nacr; /* activable coroutines */
+    int i;
+    struct canal *cnl;
+    struct process_list *item;
 
     printf ("%d\n", &acr); 
     &acr; 
@@ -687,7 +654,7 @@ struct process_list *item;
 	    case OP_SCHEDULE:
 		memcpy (stack[acr], astack, sizeof(stack[acr]));
 	    search_next:
-		do	/* search next activable coroutine */
+		do	
 		{
 			acr++;
 			if (acr >= MAX_CR)
@@ -710,7 +677,6 @@ struct process_list *item;
 		    sizeof(*(cr[ncr].calling)));*/
 		memcpy (cr[i].env, cr[acr].env,
 		    sizeof(*(cr[i].env)));
-		/* copie pile ? */
 		memcpy (stack[i], astack, sizeof(stack[i]));
 		memcpy (&tr[acr], r, sizeof(tr[acr]));
 		memcpy (&tr[i], r, sizeof(tr[i]));
@@ -721,7 +687,6 @@ struct process_list *item;
 	    case OP_SEND:
 		cnl = (struct canal *) (r->p[0]);
 		if (cnl->file == NULL)
-		/* empty file : initialize with coroutine */
 		{
 			cnl->flag = 1;
 			item = malloc (sizeof (*item));
@@ -734,7 +699,6 @@ struct process_list *item;
 			goto desactivate;
 		}
 		else if (cnl->flag)
-		/* other coroutines waiting for receive, add it at tail */
 		{
 		struct process_list *p;
 		add_tail:
@@ -744,7 +708,6 @@ struct process_list *item;
 			goto queue_item;
 		}
 		else
-		/* realize operation */
 		{
 		struct process_list *p;
 		if (nacr == MAX_CR)
@@ -775,7 +738,6 @@ struct process_list *item;
 	    case OP_RECEIVE:
 		cnl = (struct canal *) (r->p[0]);
 		if (cnl->file == NULL)
-		/* empty file : initialize with coroutine */
 		{
 			cnl->flag = 0;
 			item = malloc (sizeof (*item));
@@ -783,17 +745,14 @@ struct process_list *item;
 			goto queue_item;
 		}
 		else if (!cnl->flag)
-		/* other coroutines waiting for receive, add it at tail */
 		{
 			goto add_tail;
 		}
-		else
-		/* realize operation */
+		else		
 		{
 		struct process_list *p;
 			/* memcpy (&tr[acr], r, sizeof (struct requete));
 			   tr[acr].p[1] = cnl->file->r.p[1]; */
-
 		if (nacr == MAX_CR)
 		{
 		    printf ("Too many processes\n");
@@ -816,8 +775,6 @@ struct process_list *item;
 		free (p);
 		nacr ++;
 		break;
-
-
 		}
 
 	    case OP_END:
@@ -835,14 +792,13 @@ struct process_list *item;
 		return r->p[0];
 	}
 	r = call_coroutine (&cr[acr], (int)&tr[acr]);
-
     }
 
 }
 
-insert_process (struct process_list *p, struct process_list *pl)
+void insert_process (struct process_list *p, struct process_list *pl)
 {
-struct process_list *pl1, *prev;
+	struct process_list *pl1, *prev;
 	if (pl == NULL)
 	{
 		p->next = NULL;
@@ -879,9 +835,9 @@ struct process_list *pl1, *prev;
 
 typedef struct process_list *process_list;
 
-process_list alloc_process (int *np, int stack_size)
+void process_list alloc_process (int *np, int stack_size)
 {
-process_list p;
+	int process_list p;
 	p = malloc (sizeof (struct process_list) + stack_size);
 	if (p == NULL)
 	{
@@ -893,22 +849,22 @@ process_list p;
 	return p;
 }
 
-free_process (process_list p, int *np)
+void free_process (process_list p, int *np)
 {
 	free (p);
 	(*np)--;
 }
 
-process_list alloc_process1 (int *np, int stack_size)
+void process_list alloc_process1 (int *np, int stack_size)
 {
-process_list p;
-int ns, na, fs;
-	ns = (sizeof (struct process_list) + stack_size) / 16 + 1;
-	_BX = ns;
-	_AH = 0x48;
+	int process_list p;
+	int ns, na, fs;
+	int ns = (sizeof (struct process_list) + stack_size) / 16 + 1;
+	int _BX = ns;
+	int _AH = 0x48;
 	geninterrupt (0x21);
-	na = _BX;
-	fs = _AX;
+	int na = _BX;
+	int fs = _AX;
 	if (na < ns)
 	{
 		printf ("Too many processes (%d)\n", *np);
@@ -919,7 +875,7 @@ int ns, na, fs;
 	return p;
 }
 
-free_precess1 (process_list p, int *np)
+void free_precess1 (process_list p, int *np)
 {
 	_ES = (long)p>>16;
 	_AH = 0x49;
@@ -931,15 +887,15 @@ free_precess1 (process_list p, int *np)
 int scheduler (int (*f) (), void *p, int *astack, int stack_size,
 	int options)
 {
-process_list pl, pp;
-struct requete *r;
+	struct process_list pl, pp;
+	struct requete *r;
 /* int astack [STACK_SIZE + STACK_BOTTOM]; */
 int flag_send;
-process_list item;
+struct process_list item;
 struct canal *cnl;
-myjmp_buf calling;
+struct myjmp_buf calling;
 struct coroutine cr;
-process_list ctx;
+struct process_list ctx;
 int *sp;
 int np;
 
@@ -1138,15 +1094,15 @@ int np;
 	}
 }
 
-main ()
+int main ()
 {
-int stack [600 + STACK_BOTTOM];
-int maincr ();
-struct param_scheduler p;
- test_coroutine (); 
-  new_scheduler (testalt, 0); 
+	int stack [600 + STACK_BOTTOM];
+    int maincr ();
+	struct param_scheduler p;
+	test_coroutine (); 
+	new_scheduler (testalt, 0); 
     scheduler (testalt, 0); 
-	p.stack_size = sizeof(stack)-STACK_BOTTOM*sizeof(int);
+	int stack_size = sizeof(stack)-STACK_BOTTOM*sizeof(int);
 	scheduler (maincr, 0, stack, sizeof(stack)-STACK_BOTTOM*sizeof(int));
 }
 

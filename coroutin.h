@@ -3,13 +3,13 @@
 
 #define NREGS 18
 #define OPT_PRIO 1
-#define end end_cr
+#define end 
 #define PL_STATUS_ALT 1
 #define PL_STATUS_CUT 2
 #define STACK_SIZE /* 500 */ 30000
 #define STACK_BOTTOM 50
 
-typedef __int64 myjmp_buf[NREGS];
+typedef __int64_t myjmp_buf[NREGS];
 
 struct coroutine
 {
@@ -17,7 +17,7 @@ struct coroutine
 	myjmp_buf *env;
 };
 
-struct requete
+struct request
 {
 	myjmp_buf *env;
 	int op;
@@ -30,7 +30,7 @@ struct process_list
 	int status;
 	int prio;
 	myjmp_buf env;
-	struct requete r;
+	struct request r;
 	int stack_size;
 	int stack [STACK_BOTTOM];
 };
@@ -41,9 +41,7 @@ struct canal
 	struct process_list *file;
 };
 
-struct param_scheduler
+struct scheduler
 {
 	int stack_size;
 };
-
-

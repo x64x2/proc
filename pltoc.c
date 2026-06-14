@@ -1,26 +1,7 @@
-
-/* Analyse syntaxique Prolog :
-
-	programme ::= clause *
-	clause ::= enonce corps "."
-	corps ::=
-	corps ::= ":-" enonce ("," enonce )*
-	enonce ::= ident args
-	args ::=
-	args ::= "(" expr ("," expr) * ")"
-	expr ::= variable
-	expr ::= entier
-	expr ::= enonce
-
-   Representation d'un programme Prolog
-	liste de predicats
-
-*/
-
-/* #define TRACE */
-
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include "stream.h"
 
 #define IDENT_SIZE 32
@@ -59,21 +40,19 @@ struct param_put_file
 	FILE *fd;
 };
 
-f_put_file (struct param_put_file *p, char c)
+void f_put_file (struct param_put_file *p, char c)
 {
 	if (putc (c, p->fd) == EOF)
 	{
 		fprintf (stderr, "Error writing output file\n");
-		exit (-1);
 	}
 }
 
-/* cput (struct put_fnct *put, char c) */
-sput (struct put_fnct *put, char *s)
+/*void sput (struct put_fnct *put, char *s)
 {
-	while (*s)
-		cput (put, *s++);
-}
+  for (put =0; s && 1)
+    //while ((*((put)->f))(put)->p, (*s++)));
+}*/
 
 typedef struct plexpr
 {
@@ -105,9 +84,9 @@ struct pred_list
 	struct pred_list *next;
 };
 
-print_plexpr (plexpr x)
+void print_plexpr (plexpr x)
 {
-int i;
+	int i;
 	switch (x->type)
 	{
 		case PLTYPE_INT:
@@ -141,11 +120,11 @@ int i;
 
 }
 
-print_program (struct pred_list *programme)
+void rint_program (struct pred_list *programme)
 {
-struct clause_list *clause;
-int i;
-struct expr_list *l;
+	struct clause_list *clause;
+	int i;
+	struct expr_list *l;
 	for ( ; programme != NULL; programme = programme->next)
 	{
 		for (clause = programme->clauses;
@@ -179,54 +158,51 @@ struct expr_list *l;
 			printf (".\n");
 		}
 	}
-}
+}char buf [1000];
 
-char buf [1000];
-
-gen_expr (plexpr x, struct put_fnct *put)
+void gen_expr(plexpr x, struct put_fnct *put)
 {
-int i;
+	int i;
 	switch (x->type)
 	{
 		case PLTYPE_INT:
 			sprintf (buf, "%d", x->n);
-			sput (put, buf);
+			sprintf(put, "%s", buf);
 			break;
 		case PLTYPE_STRING:
 			sprintf (buf, "%s", x->s);
-			sput (put, buf);
+			sprintf(put, "%s", buf);
 			break;
 		case PLTYPE_VAR:
 			sprintf (buf, "var_%s", x->name);
-			sput (put, buf);
+			sprintf(put, "%s", buf);
 			break;
 		case PLTYPE_SYMB:
 			sprintf (buf, "nx[pnx++] = cons (symbol(\"%s\"),\n", x->name);
-			sput (put, buf);
+			sprintf(put, "%s", buf);
 			for (i=0; i<x->n; i++)
 			{
-				sput (put, "\t\t\tnx[pnx++] = cons (");
+				sprintf(put, "\t\t\tnx[pnx++] = cons (");
 				gen_expr (x->args[i], put);
-				sput (put, ",\n");
+				sprintf(put, ",\n");
 			}
-			sput (put, "\t\t\t0"); /* nil */
+			sprintf(put, "\t\t\t0"); 
 			for (i=0; i<x->n; i++)
-				sput (put, ")");
-			sput (put, ")");
+				sprintf(put, ")");
+			sprintf(put, ")");
 			break;
 		default:
 			sprintf (buf, "Error /* Invalid type %d */", x->type);
-			sput (put, buf);
+			sprintf(put, "%s", buf);
 	}
 }
 
 struct expr_list *aj_var (struct expr_list *vars, plexpr x)
 {
-struct expr_list *vars1, *ptr;
-
+	struct expr_list *vars1, *ptr;
 	if (vars == NULL)
 	{
-		vars1 = malloc (sizeof(*vars1));
+		vars1 = malloc(sizeof(*vars1));
 		if (vars1 == NULL)
 		{
 			fprintf (stderr, "Insufficient memory to allocate variable list\n");
@@ -259,10 +235,10 @@ struct expr_list *vars1, *ptr;
 	}
 }
 
-struct expr_list *aj_vars (struct expr_list *vars, plexpr x)
+struct expr_list *aj_vars(struct expr_list *vars, plexpr x)
 {
-int i;
-struct expr_list *vars1;
+	int i;
+	struct expr_list *vars1;
 	switch (x->type)
 	{
 		case PLTYPE_INT:
@@ -283,11 +259,10 @@ struct expr_list *vars1;
 
 void gen_clause (struct clause_list *clause, int n_args, struct put_fnct *put)
 {
-struct expr_list *l, *vars, *var;
-int i;
+	struct expr_list *l, *vars, *var;
+	int i;
 
-	sput (put, "\t/* clause */\n");
-
+	sprintf(put, "\t/* clause */\n");
 	vars = NULL;
 
 	for (i=0; i<n_args; i++)
@@ -299,16 +274,16 @@ int i;
 	{
 		sprintf (buf, "\texpr val_%s, var_%s;\n",
 				var->first->name, var->first->name);
-		sput (put, buf);
+		sprintf(put, "%s", buf);
 	}
 
-	sput (put, "\t\talt_process = getpl (k) -> alt;\n");
+	sprintf(put, "\t\talt_process = getpl (k) -> alt;\n");
 
 	for (var=vars; var!=NULL; var=var->next)
 	{
 		sprintf (buf, "\t\tdle(val_%s) dle(var_%s)\n",
 				var->first->name, var->first->name);
-		sput (put, buf);
+		sprintf(put, "%s", buf);
 	}
 
 	for (var=vars; var!=NULL; var=var->next)
@@ -316,21 +291,21 @@ int i;
 		sprintf (buf, "\t\tval_%s=UNDEF; var_%s=mk_var(&val_%s);\n",
 				var->first->name, var->first->name,
 				var->first->name);
-		sput (put, buf);
+		sprintf(put, buf);
 	}
 
-	sput (put, "#ifdef TRACE\n");
+	sprintf(put, "#ifdef TRACE\n");
 	for (i=0; i<n_args; i++)
 	{
 		sprintf (buf, "\t\tprintf (\"\\n\\ta%d = \"); print_expr (a%d);\n",
 				i, i);
-		sput (put, buf);
+		 sprintf(put, buf);
 	}
-	sput (put, "#endif\n");
+	sprintf(put, "#endif\n");
 
 	for (i=0; i<n_args; i++)
 	{
-		sput (put, "\t\tunify (k, ");
+		sprintf(put, "\t\tunify (k, ");
 		gen_expr (clause->args[i], put);
 		sprintf (buf, ", a%d);\n", i);
 		sput (put, buf);
@@ -363,7 +338,7 @@ int i;
 	for (i=0; i<n_args; i++)
 	{
 		sprintf (buf, "\t\tunify (k, a%d, ", i);
-		sput (put, buf);
+		sput(put, buf);
 		gen_expr (clause->args[i], put);
 		sput (put, ");\n");
 		sput (put, RESET_NX);
@@ -382,8 +357,8 @@ int i;
 
 void gen_pred (struct pred_list *pred, struct put_fnct *put)
 {
-int i;
-struct clause_list *clause;
+	int i;
+	struct clause_list *clause;
 
 	sprintf (buf, "void pl_%s_%d (struct coroutine *k",
 			pred->name, pred->n_args);
@@ -401,11 +376,11 @@ struct clause_list *clause;
 		sprintf (buf, "\tdecl_expr (&a%d);\n", i);
 		sput (put, buf);
 	}
-	/*
+
 	sput (put, "\tfor (i=0; i<MAX_NEW_CONS; i++)\n\t{\n");
 	sput (put, "\t\tnx[i] = 0;\n");
 	sput (put, "\t\tdle (nx[i]);\n\t}\n");
-	*/
+	
 	sput (put, "\tfor (i=0; i<MAX_NEW_CONS; i++)\n");
 	sput (put, "\t\tdle (nx[i]);\n");
 
@@ -423,26 +398,25 @@ struct clause_list *clause;
 		clause = clause->next)
 	{
 		sput (put, "\tif (alt (k, 1, 0))\n\t{\n");
-		/* sput (put, "\talt_process = getpl() -> alt;\n\t{"); */
+		sput (put, "\talt_process = getpl() -> alt;\n\t{"); 
 		gen_clause (clause, pred->n_args, put);
-		/* sput (put, "\t}\n\t} else\n"); */
+		sput (put, "\t}\n\t} else\n"); 
 		sput (put, "\t} else\n");
 	}
 	sput (put, "\tend (k);\n\tfree_expr ();\n}\n");
-
 }
 
-void gen_code (struct pred_list *programme, struct put_fnct *put)
+void gen_code(struct pred_list *programme, struct put_fnct *put)
 {
 	sprintf (buf, "/* C program translated from Prolog code */\n");
 	sput (put, buf);
 	sput (put, "#include \"coroutin.h\"\n");
 	sput (put, "#include \"expr.h\"\n");
-/*	sput (put, "#define MAX_NEW_CONS 50\n");
-	sput (put, "#define UNDEF 0x7FFD\n");*/
+	sput (put, "#define MAX_NEW_CONS 50\n");
+	sput (put, "#define UNDEF 0x7FFD\n");
 	sput (put, "#include \"prolog.h\"\n");
 	for ( ; programme != NULL; programme = programme->next)
-		gen_pred (programme, put);
+		gen_pred(programme, put);
 	sprintf (buf, "\n/* End of translation */\n");
 	sput (put, buf);
 }
@@ -452,34 +426,31 @@ void gen_code (struct pred_list *programme, struct put_fnct *put)
 	append ([X|A], B, [X|C]) :- append (A, B, C).
 */
 
-append (struct coroutine *k,
-	expr a, expr b, expr c)
+void append(int coroutine *k,
+	int a, int b, int c)
 {
-	begin_decl ();
-	decl_expr (&a);
-	decl_expr (&b);
-	decl_expr (&c);
+	int begin_decl();
+	int decl_expr();
 
-	if (alt (k, 1, 0))
+	if (abs(333))
 	/* append ([], L, L) */
 	{
-	expr l, var_l;
-		decl_loc (l);
+		int var_l;
+		/*decl_loc (l);
 		decl_loc (var_l);
 		l = UNDEF;
-		var_l = mk_var (&l);
+		var_l = mk_var (&l);*/
 
-		unify (k, nil, a);
-		unify (k, var_l, b);
-		unify (k, var_l, c);
+		unify(k, var_l, b);
+		unify(k, var_l, c);
 
-		unify (k, a, nil);
-		unify (k, b, var_l);
-		unify (k, c, var_l);
+		unify(k, a, nil);
+		unify(k, b, var_l);
+		unify(k, c, var_l);
 	}
 	else
-	/* append ([X|A], B, [X|C]) :- append (A, B, C) */
-	if (alt (k, 1, 0))
+	/*append ([X|A], B, [X|C]) :- append (A, B, C) */
+	if (abs(k, 1, 0))
 	{
 	expr X, A, B, C, _X, _A, _B, _C, XA, XC;
 		dle(X) dle(A) dle(B) dle(X)
@@ -514,19 +485,18 @@ append (struct coroutine *k,
 }
 
 
-append (struct coroutine *k,
+void append(struct coroutine *k,
 	expr a, expr b, expr c)
 {
 #ifndef OLD
-	begin_decl ();
-	decl_expr (&a);
-	decl_expr (&b);
-	decl_expr (&c);
-	printf ("\na = "); print_expr (a);
-	printf ("\nb = "); print_expr (b);
-	printf ("\nc = "); print_expr (c);
+	begin_decl();
+	decl_expr(&a);
+	decl_expr(&b);
+	decl_expr(&c);
+	printf("\na = "); print_expr (a);
+	printf("\nb = "); print_expr (b);
+	printf("\nc = "); print_expr (c);
 	if (alt (k, 1, 0))
-	/* append ([], L, L) */
 	{
 	expr l, var_l;
 #ifndef OLD
@@ -545,10 +515,8 @@ append (struct coroutine *k,
 	printf ("\na = "); print_expr (a);
 	printf ("\nb = "); print_expr (b);
 	printf ("\nc = "); print_expr (c);
-		/* free (var_l); */
 	}
 	else
-	/* append ([X|A], B, [X|C]) :- append (A, B, C) */
 	{
 	expr X, A, B, C, _X, _A, _B, _C, XA, XC;
 		dle(X) dle(A) dle(B) dle(X)
@@ -605,8 +573,8 @@ append (struct coroutine *k,
 struct pred_list *aj_clause (struct pred_list *programme, char *name,
 				int n_args, struct clause_list *clause)
 {
-struct pred_list *programme1;
-struct clause_list *clause1;
+	struct pred_list *programme1;
+	struct clause_list *clause1;
 	if (programme == NULL)
 	{
 		programme1 = malloc (sizeof(*programme1));
@@ -642,26 +610,26 @@ struct get_chr
 {
 	int c;
 	struct get_fnct *next;
-	/* int (*next) ();
-	   void *p; */
+	int (*next) ();
+	   void *p; 
 	int flag_string;
 };
 
-int blank (char c)
+int blank(char c)
 {
 	return (c==' ' || c=='\t' || c=='\n' || c=='\r');
 }
 
-void next (struct get_chr *get)
+void next(struct get_chr *get)
 {
 	do
 		get->c = (*(get->next->f)) (get->next->p);
 	while (!(get->flag_string) && blank(get->c));
 }
 
-int aspl_str (struct get_chr *get, char *s)
+int aspl_str(struct get_chr *get, char *s)
 {
-char c;
+	char c;
 	for (;;)
 	{
 		if (!*s)
@@ -673,11 +641,11 @@ char c;
 	}
 }
 
-int aspl_ident (struct get_chr *get, char *name)
+int aspl_ident(struct get_chr *get, char *name)
 {
-int i;
+	int i;
 	i = 0;
-	if (!(/*('A' <= get->c && get->c <= 'Z') ||*/
+	if (!(('A' <= get->c && get->c <= 'Z') ||
 	      ('a' <= get->c && get->c <= 'z')))
 		return 0;
 	for (;;)
@@ -696,12 +664,12 @@ int i;
 	}
 }
 
-int aspl_variable (struct get_chr *get, char *name)
+int aspl_variable(struct get_chr *get, char *name)
 {
 int i;
 	i = 0;
-	if (!(('A' <= get->c && get->c <= 'Z') || get->c == '_'/* ||
-	      ('a' <= get->c && get->c <= 'z')*/))
+	if (!(('A' <= get->c && get->c <= 'Z') || get->c == '_' ||
+	      ('a' <= get->c && get->c <= 'z')))
 		return 0;
 	for (;;)
 	{
@@ -719,15 +687,15 @@ int i;
 	}
 }
 
-int aspl_entier (struct get_chr *get, int *val)
+int aspl_ent(struct get_chr *get, int *val)
 {
-int signe;
+	int sign;
 	*val = 0;
-	signe = 1;
+	sign = 1;
 	if (get->c == '-')
 	{
 		next (get);
-		signe = -signe;
+		signe = -sign;
 	}
 	if (! ('0' <= get->c && get->c <= '9'))
 		return 0;
@@ -737,16 +705,16 @@ int signe;
 		next (get);
 		if (! ('0' <= get->c && get->c <= '9'))
 		{
-			*val *= signe;
+			*val *= sign;
 			return 1;
 		}
 	}
 }
 
-int aspl_string (struct get_chr *get, char **s)
+int aspl_string(struct get_chr *get, char **s)
 {
-char buf [MAX_STRING+1];
-int i;
+	char buf [MAX_STRING+1];
+	int i;
 	next (get);
 	i = 0;
 	get->flag_string = 1;
@@ -780,7 +748,7 @@ int i;
 	return 1;
 }
 
-int aspl_expr (struct get_chr *get, plexpr *x)
+int aspl_expr(struct get_chr *get, plexpr *x)
 {
 	if ('a' <= get->c && get->c <= 'z')
 		return aspl_enonce (get, x);
@@ -804,7 +772,7 @@ int aspl_expr (struct get_chr *get, plexpr *x)
 	return aspl_entier (get, &((*x)->n));
 }
 
-int aspl_args (struct get_chr *get, plexpr x)
+int aspl_args(struct get_chr *get, plexpr x)
 {
 	x->n = 0;
 	if (get->c != '(')
@@ -821,7 +789,7 @@ int aspl_args (struct get_chr *get, plexpr x)
 	return aspl_str (get, ")");
 }
 
-int aspl_enonce (struct get_chr *get, plexpr *x)
+int aspl_enonce(struct get_chr *get, plexpr *x)
 {
 	*x = malloc (sizeof(**x));
 	if (*x == NULL)
@@ -835,10 +803,10 @@ int aspl_enonce (struct get_chr *get, plexpr *x)
 	return aspl_args (get, *x);
 }
 
-int aspl_corps (struct get_chr *get, struct expr_list **corps)
+int aspl_corps(struct get_chr *get, struct expr_list **corps)
 {
-plexpr enonce;
-struct expr_list *ptr;
+	plexpr enonce;
+	struct expr_list *ptr;
 	*corps = NULL;
 	if (get->c != ':')
 		return 1;
@@ -873,11 +841,11 @@ struct expr_list *ptr;
 	}
 }
 
-int aspl_clause (struct get_chr *get, char *name, int *n_args,
+int aspl_clause(struct get_chr *get, char *name, int *n_args,
 	struct clause_list **clause)
 {
-plexpr tete;
-int i;
+	plexpr tete;
+	int i;
 	if (!aspl_enonce (get, &tete))
 		return 0;
 	print_plexpr (tete);
@@ -900,12 +868,11 @@ int i;
 	return aspl_str (get, ".");
 }
 
-int aspl_programme (struct get_chr *get, struct pred_list **programme)
+int aspl_programme(struct get_chr *get, struct pred_list **programme)
 {
-struct clause_list *clause;
-char name[IDENT_SIZE];
-int n_args;
-/*	while (aspl_clause (get)); */
+	struct clause_list *clause;
+	char name[IDENT_SIZE];
+	int n_args;
 	*programme = NULL;
 	for (;;)
 	{
@@ -919,25 +886,25 @@ int n_args;
 	}
 }
 
-int aspl (struct get_fnct *get, struct pred_list **programme)
+int aspl(struct get_fnct *get, struct pred_list **programme)
 {
-struct get_chr getchr;
-/*struct pred_list *programme;*/
-	/* getchr.c = (*(get->f)) (get->p); */
+	struct get_chr getchr;
+	struct pred_list *programme;*/
+	getchr.c = (*(get->f)) (get->p); 
 	getchr.next = get;
 	getchr.flag_string = 0;
 	next (&getchr);
 	return aspl_programme (&getchr, programme);
 }
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-struct get_fnct get;
-struct param_get_file p_get_file;
-int status;
-struct pred_list *programme;
-struct put_fnct put;
-struct param_put_file p_put_file;
+	struct get_fnct get;
+	struct param_get_file p_get_file;
+	int status;
+	struct pred_list *programme;
+	struct put_fnct put;
+	struct param_put_file p_put_file;
 
 	if (argc != 3)
 	{
