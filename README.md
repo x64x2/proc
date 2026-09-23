@@ -3,6 +3,7 @@
     
     Refer to Siemens document "FETCH/WRITE service in an S7-300/400 CPU via the integrated Ethernet interface" for details about the protocol specification and         configuration on the PLC side.
 
-    $ man plcfw
+    to install, run
+     $ man plcfw
 
 
