@@ -1,4 +1,4 @@
-    plcfw is a simple command-line tool to communicate with Siemens S7 PLC using the fetch-write protocol.
+    plcfw is a cli tool to interact with Siemens S7 PLC using the fetch-write protocol.
     It can be used to do a single query of one data block item, or to process a list of queries to various data blocks. 
     
     Refer to Siemens document "FETCH/WRITE service in an S7-300/400 CPU via the integrated Ethernet interface" for details about the protocol specification and         configuration on the PLC side.
